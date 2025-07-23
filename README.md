@@ -40,6 +40,32 @@ Ensures all foundational legal and compliance documents are in order.
 
 ##  System Workflow
 
+### 🔄 System Workflow
+
+```text
+Start
+  ↓
+Document Intake
+  ↓
+Pre-Verification & Alerts (Vendor Portal)
+  ↓
+Data Extraction (RabbitMQ + AI OCR + MinIO)
+  ↓
+Cross-Verification (ERP & PO Matching)
+  ↓
+Objection & Penalty Analysis (Anomalies, SLA, Contracts)
+  ↓
+Approval Workflow
+    ├──> No Issues → Auto-Approve → Payment Processing
+    └──> Issues Found → Dashboard Review → Manual Resolution
+  ↓
+Integration with ERP/Accounting Systems (APIs)
+  ↓
+Continuous Learning (User Feedback → AI Model Retraining)
+  ↓
+End
+
+
 The platform operates on a sophisticated, event-driven workflow designed for scalability and reliability.
 
 
