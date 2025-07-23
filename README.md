@@ -40,7 +40,6 @@ Ensures all foundational legal and compliance documents are in order.
 
 ##  System Workflow
 
-### 🔄 System Workflow
 
 ```text
 Start
@@ -64,6 +63,7 @@ Integration with ERP/Accounting Systems (APIs)
 Continuous Learning (User Feedback → AI Model Retraining)
   ↓
 End
+```
 
 
 The platform operates on a sophisticated, event-driven workflow designed for scalability and reliability.
