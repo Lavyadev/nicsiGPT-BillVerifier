@@ -42,7 +42,6 @@ Ensures all foundational legal and compliance documents are in order.
 
 The platform operates on a sophisticated, event-driven workflow designed for scalability and reliability.
 
-![Workflow Diagram](https://i.imgur.com/your-workflow-diagram.png) <!-- Optional: Create and upload a detailed diagram of the architecture -->
 
 **1. Document Intake:**
 -   Invoices and supporting documents are received through various channels, with the primary channel being a secure, on-premises **Vendor Portal**.
