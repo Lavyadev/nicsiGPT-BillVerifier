@@ -99,6 +99,58 @@ The platform operates on a sophisticated, event-driven workflow designed for sca
 
 ---
 
+### Pre-Submission Process
+
+This flowchart outlines the enhanced vendor submission process, incorporating real-time pre-submission alerts to ensure high-quality data before deep analysis begins.
+
+**[ Vendor Portal - Interactive Session ]**
+
+1.  **Vendor Enters PO Number**
+    `-->` Server fetches PO requirements in the background.
+
+2.  **Vendor Drags & Drops PDF Files**
+    `-->` JavaScript performs initial PDF-only format check.
+        `-->` **[ If NOT PDF ]** --> Display immediate error message.
+        `-->` **[ If PDF ]** --> Upload files to a temporary staging area.
+
+3.  **Real-Time Pre-Submission Analysis (Server-Side "Quick Look")**
+    `-->` AI performs high-speed checks:
+        -   Document existence (e.g., Is the required certificate present?)
+        -   Key field extraction (e.g., GST number, invoice total)
+        -   Signature detection
+        -   Basic consistency checks
+
+4.  **Interactive Feedback Loop (Vendor Portal UI)**
+    `-->` Display a checklist of results (`✅`, `⚠️`, `❌`).
+    `-->` **"Submit" button remains DISABLED if there are critical errors (`❌`).**
+
+5.  **Vendor Corrects Errors**
+    `-->` Vendor sees `❌ Missing Document` and uploads the correct file.
+    `-->` **[ Go back to Step 3 ]** - The system re-analyzes the new file.
+    `-->` This loop continues until all checks pass (`✅`).
+
+**[ Final Submission ]**
+
+6.  **"Submit" Button is ENABLED**
+    `-->` All pre-flight checks are now green (`✅`).
+
+7.  **Vendor Clicks "Submit"**
+    `-->` This triggers the main, in-depth processing workflow.
+
+**[ Backend - Asynchronous Processing ]**
+
+8.  **Server Finalizes Submission**
+    `-->` Generates a permanent `submission_id`.
+    `-->` Moves staged files to permanent storage (MinIO).
+    `-->` Creates the final JSON Job Message with all metadata and file paths.
+
+9.  **Send to Processing Queue**
+    `-->` The JSON Job Message is published to RabbitMQ.
+    `-->` An instant "Success!" message is sent back to the vendor's browser.
+
+10. **Deep Analysis Begins**
+    `-->` A worker service picks up the job from the queue to perform the full, multi-stage verification (Data Extraction, Cross-Verification, Objection Analysis, etc.).
+
 ##  Technology Stack
 
 This project is built with a focus on on-premises deployment, security, and scalability.
