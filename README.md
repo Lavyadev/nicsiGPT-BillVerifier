@@ -1,106 +1,89 @@
 # Intelligent Bill Verifier
 
-An AI-powered, end-to-end platform designed to automate the entire lifecycle of vendor bill processing, from submission and data extraction to verification, compliance, and payment approval.
+##  Scope of the Project
 
-## The Problem: The Hidden Costs of Manual Bill Processing
+This project automates the verification process through five core modules of intelligence:
 
-In many large-scale operations, particularly those involving contract labor and milestone-based projects, processing vendor invoices is a slow, manual, and error-prone process. This traditional workflow creates significant operational bottlenecks and financial risks, including:
+### 1.  Invoice & Supporting Document Extraction
+The foundation of the platform. The system ingests and understands a wide array of document types submitted as a single package.
+-   **Parses:** Invoices, Manpower Reports (MPR), Attendance Reports, Salary Proofs, Completion Certificates, and more.
+-   **Technology:** A Deep Learning model with integrated OCR capabilities (based on LayoutLM architecture) for high-accuracy, context-aware data extraction.
 
-*   **High Operational Overhead:** Accounts Payable (AP) teams spend countless hours manually cross-referencing invoices with purchase orders, attendance sheets, and completion certificates.
-*   **Costly Human Errors:** Manual data entry and verification inevitably lead to mistakes, resulting in overpayments, underpayments, and duplicate payments.
-*   **Delayed Payments:** The slow and inefficient process can delay payments to vendors, straining business relationships and potentially incurring late fees.
-*   **Revenue Leakage:** Without automated checks, penalties for SLA violations (like delays or manpower shortfalls) are often missed, leading to direct financial loss.
-*   **Lack of Insight:** Manual processes make it impossible to analyze vendor behavior, identify patterns of non-compliance, or spot fraudulent activity over time.
+### 2.  Cross-Verification Engine
+The first layer of validation. The engine acts as a diligent auditor, comparing the extracted data against internal business records and ensuring consistency across the submitted documents.
+-   Match bills with **Purchase Orders (PO)** to check for budget and line-item discrepancies.
+-   Verify attendance data against **manpower deployed** as per the PO.
+-   Validate **bank statements/salary payments** against claimed labor costs.
+-   Confirm **milestone/completion certificates** are present and match the invoiced claims.
 
-This project aims to solve these problems by replacing the manual workflow with an intelligent, automated, and data-driven system.
+### 3.  Objection-Aware Validation
+The second layer of validation. This module acts as an experienced risk analyst, flagging submissions that, while technically correct, are suspicious based on historical patterns.
+-   Flag objections based on a vendor's **historical data**, identifying chronic issues, anomalous billing behavior, and high-risk attributes.
 
----
+### 4.  Vendor Pre-Submission Alerts
+A proactive module designed to improve first-time submission quality by preventing errors before they happen.
+-   Provides a real-time, interactive feedback loop on the vendor portal.
+-   Notifies vendors of **missing documents, data inconsistencies, signature errors, or GST number mismatches** *before* they are allowed to finalize their submission.
 
-## Project Scope & Core Features
+### 5.   Penalty & SLA Compliance
+The final layer of financial control. The engine automatically calculates and applies contractual financial penalties.
+-   Detect contract penalties for **delays, manpower shortfalls, and quality issues**.
+-   Calculate penalties as per **RFP, Work Order, or SLA clauses**.
+-   Automatically detect and apply any **penalty waivers** to adjust final deductions.
 
-This platform is composed of five intelligent modules that work in concert to deliver a complete automation solution:
-
-1.  **Invoice & Supporting Document Extraction:**
-    *   Leverages AI-powered OCR and Deep Learning to accurately parse a wide range of documents, including invoices, Manpower Reports (MPR), attendance sheets, salary proofs, and completion certificates.
-
-2.  **Vendor Pre-Submission Alerts:**
-    *   An interactive, real-time "pre-flight check" that validates documents *before* final submission. It notifies vendors of missing documents, inconsistent data, or signature errors, drastically improving the quality of submissions and reducing back-and-forth communication.
-
-3.  **Cross-Verification Engine:**
-    *   The core automated auditor that matches extracted bill data against business records. It verifies invoice amounts against Purchase Orders (POs), attendance against manpower deployed per the PO, and confirms the existence and validity of supporting documents like milestone certificates.
-
-4.  **Objection-Aware Validation:**
-    *   A risk analysis engine that goes beyond simple rule-based checks. It analyzes a vendor's historical data to flag statistical anomalies, chronic rule violations, and other patterns that might indicate a hidden issue, even if the submission appears correct on the surface.
-
-5.  **Penalty & SLA Compliance:**
-    *   The financial enforcement module. It automatically detects contractual penalties for issues like project delays, manpower shortfalls, or quality problems. It calculates these deductions as per the contract/SLA and adjusts the final payable amount.
-
----
-
-## System Architecture & Workflow
-
-The system is built on a microservices architecture to ensure scalability and separation of concerns. The core services are:
-
-1.  **Portal Frontend (`portal_frontend`):** A React/Vue-based interface for vendors to upload their documents. It handles the real-time Pre-Submission Alert workflow.
-2.  **API Server (`api_server`):** A backend service (Python/Flask) that supports the frontend, handles user authentication, and performs the real-time "quick look" analysis. It is also responsible for creating and queueing the main processing job.
-3.  **Document Worker (`document_worker`):** The main asynchronous AI engine. It consumes jobs from the queue and performs full OCR, data extraction, and standard cross-verification.
-4.  **Objection Engine (`objection_engine`):** A separate, scheduled service that runs periodically to analyze verified submissions and flag historical objections.
-5.  **Shared Infrastructure (via Docker Compose):**
-    *   **PostgreSQL:** The primary database.
-    *   **RabbitMQ:** The message queue for managing asynchronous jobs.
-    *   **MinIO:** On-premises object storage for all documents.
-
-### System Flowcharts
-
-#### 1. Vendor Pre-Submission & Ingestion Flow
-
-This chart illustrates the real-time, interactive workflow the vendor experiences *before* a submission is finalized, preventing errors at the source.
-
-![Vendor Pre-Submission Flow](https://i.imgur.com/gYd5z9a.png)
-
-#### 2. Backend Asynchronous Processing Flow
-
-This chart illustrates the entire backend pipeline that begins *after* the vendor clicks the final "Submit" button. It shows the interaction between the different microservices as they perform extraction, verification, and analysis.
-
-![Backend Processing Flow](https://i.imgur.com/k6lPqQ7.png)
+### 6.  Compliance Document Validation
+Ensures all foundational legal and compliance documents are in order.
+-   Validate the integrity and validity of **Bank Guarantees** and **Work Orders**.
+-   Check for **bill validity** and detect potential **duplicate submissions** across the system.
 
 ---
 
-## Repository Structure
+##  System Workflow
 
-```
-Intelligent-Bill-Verifier/
-├── docs/
-│   ├── architecture.md
-│   ├── pre_submission_flow.png
-│   └── backend_processing_flow.png
-│
-├── services/
-│   ├── api_server/
-│   ├── portal_frontend/
-│   ├── document_worker/
-│   └── objection_engine/
-│
-├── .env.example
-├── docker-compose.yml
-└── README.md
-```
-*(For a detailed file structure, please refer to the `docs/architecture.md` file.)*
+The platform operates on a sophisticated, event-driven workflow designed for scalability and reliability.
+
+![Workflow Diagram](https://i.imgur.com/your-workflow-diagram.png) <!-- Optional: Create and upload a detailed diagram of the architecture -->
+
+**1. Document Intake:**
+-   Invoices and supporting documents are received through various channels, with the primary channel being a secure, on-premises **Vendor Portal**.
+
+**2. Pre-Verification & Alerts (Vendor Portal):**
+-   If submitted via the portal, a real-time validation engine performs a "pre-flight check." It alerts the vendor of any immediate errors (missing documents, signature issues), preventing incorrect submissions from entering the system.
+
+**3. Data Extraction (Asynchronous Processing):**
+-   Upon successful submission, a job message is sent to a **RabbitMQ** processing queue.
+-   A Python-based worker service picks up the job, retrieves the documents from **MinIO** object storage, and feeds them into the AI engine.
+-   The Deep Learning model performs integrated OCR and data structuring, outputting clean JSON.
+
+**4. Cross-Verification:**
+-   The system matches the extracted data against POs and other records fetched from the primary business database (ERP). Discrepancies are flagged.
+
+**5. Objection & Penalty Analysis:**
+-   The AI analyzes the invoice against all historical data in the **PostgreSQL** database to flag statistical anomalies and suspicious patterns.
+-   It then checks for any applicable penalties or SLA violations based on stored contract terms.
+
+**6. Approval Workflow:**
+-   **Straight-Through Processing:** If zero discrepancies or objections are found, the invoice is automatically flagged as "Approved" and sent for payment processing.
+-   **Exception Handling:** If any issues are flagged, the invoice and its detailed verification report are routed to the appropriate personnel via a user-facing dashboard for manual review and resolution.
+
+**7. Integration with Core Systems:**
+-   The entire system is designed with APIs to integrate seamlessly with existing **Enterprise Resource Planning (ERP)** and accounting systems for data synchronization and financial record-keeping.
+
+**8. Continuous Learning:**
+-   The system architecture includes feedback loops where user actions (e.g., overriding a flag, rejecting an invoice) are logged. This data is used to periodically re-train and improve the accuracy of the AI models and the effectiveness of the objection and fraud detection capabilities.
 
 ---
 
-## Getting Started
+##  Technology Stack
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/your-username/Intelligent-Bill-Verifier.git
-    cd Intelligent-Bill-Verifier
-    ```
-2.  **Configure Environment:**
-    *   Copy `.env.example` to `.env`.
-    *   Fill in the necessary credentials for PostgreSQL, RabbitMQ, etc.
-3.  **Run the System:**
-    ```bash
-    docker-compose up --build
-    ```
-This will build and run all the containerized services. The vendor portal will be available on `http://localhost:3000`, and the backend API on `http://localhost:5000` (or as configured).
+This project is built with a focus on on-premises deployment, security, and scalability.
+
+-   **Backend:** Python (Flask/Django)
+-   **AI/ML:** PyTorch, LayoutLM, OpenCV, Tesseract
+-   **Database:** PostgreSQL (with JSONB support)
+-   **Message Queue:** RabbitMQ
+-   **File Storage:** MinIO (S3-Compatible Object Storage)
+-   **Frontend Dashboard:** React / Angular / Vue.js
+-   **Deployment:** Docker, Cron (for scheduled tasks)
+
+---
