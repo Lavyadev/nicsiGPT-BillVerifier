@@ -1,4 +1,4 @@
-# Intelligent Bill Verifier
+# nicsiGPT-BillVerifier
 
 ##  Scope of the Project
 
