@@ -518,7 +518,6 @@ This data is required **one-time** for the initial training and subsequent perio
     -   [ ] Work Orders
     -   [ ] Salary Proofs / Bank Statements (Anonymized where necessary to protect PII)
 
-> **Note:** The pre-trained Invoice model does not require this initial dataset, but its accuracy can be improved by fine-tuning on company-specific invoice layouts.
 
 ---
 
