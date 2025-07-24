@@ -9,6 +9,103 @@ The foundation of the platform. The system ingests and understands a wide array 
 -   **Parses:** Invoices, Manpower Reports (MPR), Attendance Reports, Salary Proofs, Completion Certificates, and more.
 -   **Technology:** A Deep Learning model with integrated OCR capabilities (based on LayoutLM architecture) for high-accuracy, context-aware data extraction.
 
+### 🔁 Enhanced Document Ingestion Workflow (with Pre-Submission Alerts)
+
+```text
+Start
+  ↓
+────────────────── Phase 1: Staging Area ──────────────────
+  ↓
+Vendor Enters PO Number
+  ↓
+→ Server fetches PO requirements (ground truth)
+  ↓
+Vendor Drag-and-Drops PDFs (Invoice, MPR, Certificate)
+  ↓
+→ Client-side validation: only PDF allowed
+    ├──> If not PDF → show error → reject file
+    └──> If PDF → upload to staging endpoint
+  ↓
+Show "Analyzing..." spinner in UI for each file
+  ↓
+──────────────── Phase 2: Pre-Flight Check ────────────────
+  ↓
+→ Server triggers High-Speed AI Pipeline (Quick Look)
+  ↓
+Real-Time AI Checks:
+  • Document Existence (e.g., Certificate required?)
+  • Key Field Extraction (GST, Amount, Vendor Name)
+  • Signature Detection (CV model on Certificate)
+  • Basic Consistency Check (Vendor data vs DB)
+  ↓
+→ Server sends back JSON with warnings/errors
+  ↓
+──────────── Phase 3: Interactive Feedback Loop ───────────
+  ↓
+UI renders result checklist:
+  • ✅ Invoice Found
+  • ⚠ GST Mismatch
+  • ❌ Missing Completion Certificate
+  • ✅ MPR Found
+  • ✅ Signature Found (if doc present)
+  ↓
+"Submit" button remains DISABLED until all ❌ are resolved
+  ↓
+Vendor Corrects Issues:
+  → Upload missing/corrected files
+  → System re-runs analysis
+  → UI updates checklist in real-time
+  ↓
+→ Loop continues until all checks are ✅
+  ↓
+────────────── Phase 4: Final Submission ────────────────
+  ↓
+"Submit" Button is ENABLED
+  ↓
+Vendor clicks "Submit"
+  ↓
+→ Server performs Final Validation:
+    • Valid PDF Magic Number?
+    • PO Number Present?
+    ├──> If any invalid → reject & delete → return error
+    └──> If all valid → continue
+  ↓
+Generate submission_id (e.g., sub_a1b2c3d4)
+  ↓
+Move files to permanent storage (e.g., MinIO)
+  ↓
+Generate Final JSON Job Message with metadata + file paths
+  ↓
+Publish message to RabbitMQ queue
+  ↓
+→ Server returns "Success" response to UI
+  ↓
+──────────────────── Phase 5: Deep Analysis ───────────────
+  ↓
+Worker picks message from RabbitMQ queue
+  ↓
+→ Downloads files from MinIO
+  ↓
+Convert PDF to high-res image
+  ↓
+Image Preprocessing:
+  • Deskew
+  • Binarize
+  • Noise Reduction
+  ↓
+OCR Engine extracts text + positions (bounding boxes)
+  ↓
+AI Structuring Model processes:
+  • Key-Value Pair Extraction
+  • Table Recognition
+  • Logical Value Assignment (e.g., Grand Total)
+  ↓
+Aggregate structured data for entire submission
+  ↓
+→ Format final output (e.g., standardize dates)
+  ↓
+End
+```
 ### 2.  Cross-Verification Engine
 The first layer of validation. The engine acts as a diligent auditor, comparing the extracted data against internal business records and ensuring consistency across the submitted documents.
 -   Match bills with **Purchase Orders (PO)** to check for budget and line-item discrepancies.
