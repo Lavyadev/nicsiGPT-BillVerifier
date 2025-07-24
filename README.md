@@ -504,6 +504,73 @@ End
 ```
 ---
 
+## 📊 Data Requirements & Prerequisites
+
+### 1. AI Model Training Data
+This data is required **one-time** for the initial training and subsequent periodic re-training of the platform's custom Deep Learning models.
+
+-   **Requirement:** A representative, historical sample for each *custom* document type that the system needs to process.
+-   **Specification:** A minimum of **50-100 examples** for each document category. The dataset must be diverse, including documents from various vendors and of varying scan quality (both digital-native and scanned).
+-   **Document Types:**
+    -   [ ] Manpower Reports (MPRs)
+    -   [ ] Completion Certificates
+    -   [ ] Bank Guarantees
+    -   [ ] Work Orders
+    -   [ ] Salary Proofs / Bank Statements (Anonymized where necessary to protect PII)
+
+> **Note:** The pre-trained Invoice model does not require this initial dataset, but its accuracy can be improved by fine-tuning on company-specific invoice layouts.
+
+---
+
+### 2. Live Transactional Data (For Real-Time Verification)
+This data is required for the day-to-day operation of the **Cross-Verification Engine**. The system needs real-time access to query this data.
+
+-   **Requirement:** Access to the **Vendor Master** and **Purchase Order (PO)** data from the primary ERP or business management system.
+-   **Specification:** An API endpoint or a read-only database user capable of fetching the following data structure when queried by a `po_number`:
+
+    -   **Vendor Master Record:**
+        -   `vendor_id`
+        -   `vendor_name`
+        -   `vendor_address`
+        -   `vendor_gst_number`
+        -   `vendor_bank_account_details`
+    -   **Purchase Order Header:**
+        -   `po_number`
+        -   `po_total_value` (Total budget)
+        -   `po_status` ('Approved', 'Closed', etc.)
+        -   `milestone_due_date`
+        -   `required_manpower_count`
+        -   `po_category` ('Capital Project', 'Operational Expense', etc.)
+    -   **Purchase Order Line Items:**
+        -   An array of `approved_line_items`, each containing:
+            -   `item_code` (if applicable)
+            -   `description`
+            -   `quantity_approved`
+            -   `rate_approved`
+
+---
+
+### 3. Contractual & Compliance Data
+This data is required for the **Penalty & SLA Compliance Engine** to automatically enforce contractual terms.
+
+-   **Requirement:** Access to structured data defining the rules of the contract.
+-   **Specification:** For a given PO or Contract ID, the system must be able to retrieve:
+    -   **SLA Penalty Clauses:** A structured list of penalty rules (e.g., JSON object) containing:
+        -   Rules for `late_delivery_penalty` (type, value, grace period).
+        -   Rules for `manpower_shortfall_penalty` (type, value).
+        -   Rules for `quality_issue_penalty` (type, value).
+    -   **Penalty Waivers:** A list of any pre-approved, active waivers, including the type of penalty waived and the amount/duration.
+    -   **Business Rules:** Key operational rules, such as `max_invoice_age_for_submission` (e.g., 90 days).
+
+---
+
+### 4. Ancillary Operational Data
+This data is required for specific, advanced validation checks.
+
+-   **Requirement:** Access to any internal systems that log service quality or operational issues.
+-   **Specification:** Read-only access to the **Internal Quality Issues Log**. The system needs to be able to query this log by `po_number` to check for any open complaints or documented service failures that may trigger a quality-related penalty.
+
+---
 
 ##  Technology Stack
 
