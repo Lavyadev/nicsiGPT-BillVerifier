@@ -1,4 +1,4 @@
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/2e1d97c9-571a-42d5-a4fe-2b112b132f71" /># nicsiGPT-BillVerifier
+# nicsiGPT:BillVerifier
 
 ##  System Workflow
 
