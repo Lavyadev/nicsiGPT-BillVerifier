@@ -1,4 +1,4 @@
-# nicsiGPT-BillVerifier
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/2e1d97c9-571a-42d5-a4fe-2b112b132f71" /># nicsiGPT-BillVerifier
 
 ##  System Workflow
 
@@ -338,6 +338,90 @@ The final layer of financial control. The engine automatically calculates and ap
 -   Detect contract penalties for **delays, manpower shortfalls, and quality issues**.
 -   Calculate penalties as per **RFP, Work Order, or SLA clauses**.
 -   Automatically detect and apply any **penalty waivers** to adjust final deductions.
+
+  [ Trigger: Status = "Pending Review" OR "System Verified" ]
+
+↓
+Fetch submission_id → Load:
+  • submission_record (from PostgreSQL)
+  • extracted_data
+  • verification_report
+  • po_data (ERP)
+  • sla_clauses (ERP)
+↓
+──────────── Penalty Engine Core Steps ────────────
+
+Initialize Financial Summary:
+  ↓
+Set total_deductions = 0
+Create empty deductions_detail list
+
+↓
+Run Delay Penalty Check:
+  ↓
+IF milestone FAIL in verification_report:
+  ↓
+  → Get completion_date (from extracted_data)
+  → Get milestone_due_date (from po_data)
+  → Get late_delivery_penalty rule (from sla_clauses)
+  ↓
+  Calculate penalty_days using datetime
+  ↓
+  IF penalty_days > 0:
+    → Compute penalty_amount
+    → Append to deductions_detail: {"type": "Late Delivery", ...}
+    → Update total_deductions
+
+↓
+Run Manpower Shortfall Penalty Check:
+  ↓
+IF manpower FAIL in verification_report:
+  ↓
+  → Get actual_manpower (from attendance)
+  → Get authorized_manpower (from po_data)
+  → Get shortfall_penalty rule (from sla_clauses)
+  ↓
+  Compute penalty_amount
+  ↓
+  → Append to deductions_detail: {"type": "Manpower Shortfall", ...}
+  → Update total_deductions
+
+↓
+Run Quality Issue Penalty Check:
+  ↓
+Query Internal Quality DB for complaints (by po_number)
+  ↓
+IF open complaints found:
+  ↓
+  → Get quality_issue_penalty rule
+  → Calculate penalty_amount = invoice_amount × penalty_percentage
+  → Append to deductions_detail: {"type": "Quality Issue", ...}
+  → Update total_deductions
+
+↓
+Apply Waivers (if defined):
+  ↓
+Iterate over deductions_detail:
+  ↓
+  IF waiver found in sla_clauses["penalty_waivers"]:
+    ↓
+    → Adjust deduction amount (possibly to zero)
+    → Add waiver reason to entry
+    → Recalculate total_deductions
+
+↓
+──────────── Save and Finalize ────────────
+
+Assemble financial_summary JSON:
+  → Include deductions_detail
+  → Include total_deductions
+  ↓
+Update submission record in PostgreSQL:
+  → Merge financial_summary into verification_report JSONB column
+
+↓
+End
+```
 
 ### 6.  Compliance Document Validation
 Ensures all foundational legal and compliance documents are in order.
