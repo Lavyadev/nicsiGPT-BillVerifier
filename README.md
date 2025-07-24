@@ -512,6 +512,7 @@ This data is required **one-time** for the initial training and subsequent perio
 -   **Requirement:** A representative, historical sample for each *custom* document type that the system needs to process.
 -   **Specification:** A minimum of **50-100 examples** for each document category. The dataset must be diverse, including documents from various vendors and of varying scan quality (both digital-native and scanned).
 -   **Document Types:**
+    -   [ ] Vendor Master Record
     -   [ ] Manpower Reports (MPRs)
     -   [ ] Completion Certificates
     -   [ ] Bank Guarantees
