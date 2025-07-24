@@ -339,89 +339,96 @@ The final layer of financial control. The engine automatically calculates and ap
 -   Calculate penalties as per **RFP, Work Order, or SLA clauses**.
 -   Automatically detect and apply any **penalty waivers** to adjust final deductions.
 
-  [ Trigger: Status = "Pending Review" OR "System Verified" ]
+```text
+Start
+  ↓
+──────────── 1. Trigger & Data Fetch ─────────────
+  ↓
+Trigger: Submission status = "Pending Review" OR "System Verified"
+  ↓
+Load from PostgreSQL:
+  ├── submission_record (includes extracted_data & verification_report)
+  ├── po_data (from ERP)
+  └── sla_clauses (from ERP)
+  ↓
+Extract: submission_id, po_number
 
-↓
-Fetch submission_id → Load:
-  • submission_record (from PostgreSQL)
-  • extracted_data
-  • verification_report
-  • po_data (ERP)
-  • sla_clauses (ERP)
-↓
-──────────── Penalty Engine Core Steps ────────────
+──────────── 2. Initialize Financial Summary ─────────────
+  ↓
+total_deductions = 0
+deductions_detail = []
 
-Initialize Financial Summary:
+──────────── 3. Run Penalty Checks ─────────────
   ↓
-Set total_deductions = 0
-Create empty deductions_detail list
+▶️ Sub-Step A: Delay Penalty Check
+  ↓
+If milestone FAIL exists in verification_report:
+  ├── Get completion_date (from extracted_data)
+  ├── Get milestone_due_date (from po_data)
+  ├── Get penalty_rate & grace_period (from sla_clauses)
+  └── Calculate:
+        penalty_days = (completion_date - due_date) - grace_period
+        If penalty_days > 0:
+          ├── penalty_amount = milestone_value × penalty_rate × penalty_days
+          └── Append to deductions_detail:
+              { type: "Late Delivery", amount: ..., reason: ... }
+          Update total_deductions
 
-↓
-Run Delay Penalty Check:
   ↓
-IF milestone FAIL in verification_report:
+▶️ Sub-Step B: Manpower Shortfall Penalty
   ↓
-  → Get completion_date (from extracted_data)
-  → Get milestone_due_date (from po_data)
-  → Get late_delivery_penalty rule (from sla_clauses)
-  ↓
-  Calculate penalty_days using datetime
-  ↓
-  IF penalty_days > 0:
-    → Compute penalty_amount
-    → Append to deductions_detail: {"type": "Late Delivery", ...}
-    → Update total_deductions
+If manpower FAIL exists in verification_report:
+  ├── Get actual_manpower (from attendance)
+  ├── Get authorized_manpower (from po_data)
+  ├── Get per_person_penalty (from sla_clauses)
+  └── Calculate:
+        shortfall = authorized - actual
+        penalty_amount = shortfall × per_person_penalty
+        Append to deductions_detail:
+          { type: "Manpower Shortfall", amount: ..., reason: ... }
+        Update total_deductions
 
-↓
-Run Manpower Shortfall Penalty Check:
   ↓
-IF manpower FAIL in verification_report:
+▶️ Sub-Step C: Quality Issue Penalty
   ↓
-  → Get actual_manpower (from attendance)
-  → Get authorized_manpower (from po_data)
-  → Get shortfall_penalty rule (from sla_clauses)
+Query Quality DB for complaints by po_number
   ↓
-  Compute penalty_amount
-  ↓
-  → Append to deductions_detail: {"type": "Manpower Shortfall", ...}
-  → Update total_deductions
+If complaint found:
+  ├── Get penalty_percentage (from sla_clauses)
+  ├── Get invoice_amount (from extracted_data)
+  └── Calculate:
+        penalty_amount = invoice_amount × penalty_percentage
+        Append to deductions_detail:
+          { type: "Quality Issue", amount: ..., reason: ... }
+        Update total_deductions
 
-↓
-Run Quality Issue Penalty Check:
+──────────── 4. Apply Penalty Waivers ─────────────
   ↓
-Query Internal Quality DB for complaints (by po_number)
-  ↓
-IF open complaints found:
-  ↓
-  → Get quality_issue_penalty rule
-  → Calculate penalty_amount = invoice_amount × penalty_percentage
-  → Append to deductions_detail: {"type": "Quality Issue", ...}
-  → Update total_deductions
+For each item in deductions_detail:
+  ├── Check if waiver exists in sla_clauses["penalty_waivers"]
+  └── If found:
+        ├── Adjust penalty amount (e.g., reduce to 0)
+        └── Update reason field with waiver note
+        Recalculate total_deductions
 
-↓
-Apply Waivers (if defined):
+──────────── 5. Finalize & Save ─────────────
   ↓
-Iterate over deductions_detail:
+Prepare financial_summary JSON:
+{
+  "deductions": [...],
+  "total_deductions": ...
+}
   ↓
-  IF waiver found in sla_clauses["penalty_waivers"]:
-    ↓
-    → Adjust deduction amount (possibly to zero)
-    → Add waiver reason to entry
-    → Recalculate total_deductions
-
-↓
-──────────── Save and Finalize ────────────
-
-Assemble financial_summary JSON:
-  → Include deductions_detail
-  → Include total_deductions
+PostgreSQL Query:
+UPDATE submissions
+SET verification_report = jsonb_set(verification_report, '{financial_summary}', %s::jsonb)
+WHERE submission_id = %s;
   ↓
-Update submission record in PostgreSQL:
-  → Merge financial_summary into verification_report JSONB column
-
-↓
+Commit changes
+  ↓
 End
 ```
+
 
 ### 6.  Compliance Document Validation
 Ensures all foundational legal and compliance documents are in order.
