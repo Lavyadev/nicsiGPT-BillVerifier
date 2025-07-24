@@ -192,6 +192,80 @@ End
 The second layer of validation. This module acts as an experienced risk analyst, flagging submissions that, while technically correct, are suspicious based on historical patterns.
 -   Flag objections based on a vendor's **historical data**, identifying chronic issues, anomalous billing behavior, and high-risk attributes.
 
+  ### 🚨 Objection-Aware Validation Workflow
+
+This process runs periodically via a cron-triggered script (`objection_engine.py`) and performs deep analysis on already-verified submissions using historical and statistical patterns.
+
+```text
+Start
+  ↓
+──────────── 1. Fetch Submissions for Objection Analysis ─────────────
+  ↓
+Connect to PostgreSQL
+  ↓
+Query:
+SELECT submission_id, vendor_id, verification_report, extracted_data
+FROM submissions
+WHERE status = 'Pending Review'
+AND verification_report->>'objections_processed' IS NULL;
+  ↓
+Loop Through Each Pending Submission
+  ↓
+──────────── 2. Historical Analysis (Per Submission) ─────────────
+  ↓
+Load: submission_id, vendor_id, extracted_data, verification_report
+  ↓
+▶️ Sub-Step A: Chronic Failure Analysis
+  ↓
+For each FAIL in verification_report:
+  ├── Query past similar failures for the same vendor
+  ├── If failure count > threshold:
+  └── Create objection: { type: "Chronic Violation", detail: ... }
+
+▶️ Sub-Step B: Statistical Anomaly Analysis
+  ↓
+Fetch all historical invoice totals for vendor_id
+  ↓
+Convert to pandas Series → Calculate Mean & Std Dev
+  ↓
+If current total > 3×std_dev from mean:
+  └── Create objection: { type: "Anomalous Behavior", detail: ... }
+
+▶️ Sub-Step C: High-Risk Attribute Check
+  ↓
+Look for risky attributes (e.g., 'Miscellaneous Fees') in line items
+  ↓
+Fetch historical rejection rate for that attribute
+  ↓
+If risk is high:
+  └── Create objection: { type: "High-Risk Attribute", detail: ... }
+
+──────────── 3. Merge & Save Objection Results ─────────────
+  ↓
+Compile objections:
+objections_found = [
+  { "type": "...", "detail": "..." },
+  ...
+]
+  ↓
+Prepare JSON Merge Payload:
+{
+  "objections": objections_found,
+  "objections_processed": true
+}
+  ↓
+PostgreSQL Query:
+UPDATE submissions
+SET verification_report = verification_report || %s::jsonb
+WHERE submission_id = %s;
+  ↓
+Commit the changes
+  ↓
+Repeat for next submission
+  ↓
+End
+```
+
 ### 4.  Vendor Pre-Submission Alerts
 A proactive module designed to improve first-time submission quality by preventing errors before they happen.
 -   Provides a real-time, interactive feedback loop on the vendor portal.
