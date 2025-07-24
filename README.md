@@ -55,7 +55,7 @@ Cross-Verification (ERP & PO Matching)
 Objection & Penalty Analysis (Anomalies, SLA, Contracts)
   ↓
 Approval Workflow
-    ├──> No Issues → Auto-Approve → Payment Processing
+    ├──> No Issues → Human Check → Auto-Approve → Payment Processing
     └──> Issues Found → Dashboard Review → Manual Resolution
   ↓
 Integration with ERP/Accounting Systems (APIs)
