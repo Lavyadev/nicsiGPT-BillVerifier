@@ -1,5 +1,67 @@
 # nicsiGPT-BillVerifier
 
+##  System Workflow
+
+
+```text
+Start
+  ↓
+Document Intake
+  ↓
+Pre-Verification & Alerts (Vendor Portal)
+  ↓
+Data Extraction (RabbitMQ + AI OCR + MinIO)
+  ↓
+Cross-Verification (ERP & PO Matching)
+  ↓
+Objection & Penalty Analysis (Anomalies, SLA, Contracts)
+  ↓
+Approval Workflow
+    ├──> No Issues → Human Check → Auto-Approve → Payment Processing
+    └──> Issues Found → Dashboard Review → Manual Resolution
+  ↓
+Integration with ERP/Accounting Systems (APIs)
+  ↓
+Continuous Learning (User Feedback → AI Model Retraining)
+  ↓
+End
+```
+
+
+The platform operates on a sophisticated, event-driven workflow designed for scalability and reliability.
+
+
+**1. Document Intake:**
+-   Invoices and supporting documents are received through various channels, with the primary channel being a secure, on-premises **Vendor Portal**.
+
+**2. Pre-Verification & Alerts (Vendor Portal):**
+-   If submitted via the portal, a real-time validation engine performs a "pre-flight check." It alerts the vendor of any immediate errors (missing documents, signature issues), preventing incorrect submissions from entering the system.
+
+**3. Data Extraction (Asynchronous Processing):**
+-   Upon successful submission, a job message is sent to a **RabbitMQ** processing queue.
+-   A Python-based worker service picks up the job, retrieves the documents from **MinIO** object storage, and feeds them into the AI engine.
+-   The Deep Learning model performs integrated OCR and data structuring, outputting clean JSON.
+
+**4. Cross-Verification:**
+-   The system matches the extracted data against POs and other records fetched from the primary business database (ERP). Discrepancies are flagged.
+
+**5. Objection & Penalty Analysis:**
+-   The AI analyzes the invoice against all historical data in the **PostgreSQL** database to flag statistical anomalies and suspicious patterns.
+-   It then checks for any applicable penalties or SLA violations based on stored contract terms.
+
+**6. Approval Workflow:**
+-   **Straight-Through Processing:** If zero discrepancies or objections are found, the invoice is automatically flagged as "Approved" and sent for payment processing.
+-   **Exception Handling:** If any issues are flagged, the invoice and its detailed verification report are routed to the appropriate personnel via a user-facing dashboard for manual review and resolution.
+
+**7. Integration with Core Systems:**
+-   The entire system is designed with APIs to integrate seamlessly with existing **Enterprise Resource Planning (ERP)** and accounting systems for data synchronization and financial record-keeping.
+
+**8. Continuous Learning:**
+-   The system architecture includes feedback loops where user actions (e.g., overriding a flag, rejecting an invoice) are logged. This data is used to periodically re-train and improve the accuracy of the AI models and the effectiveness of the objection and fraud detection capabilities.
+
+---
+
+
 ##  Scope of the Project
 
 This project automates the verification process through five core modules of intelligence:
@@ -284,66 +346,6 @@ Ensures all foundational legal and compliance documents are in order.
 
 ---
 
-##  System Workflow
-
-
-```text
-Start
-  ↓
-Document Intake
-  ↓
-Pre-Verification & Alerts (Vendor Portal)
-  ↓
-Data Extraction (RabbitMQ + AI OCR + MinIO)
-  ↓
-Cross-Verification (ERP & PO Matching)
-  ↓
-Objection & Penalty Analysis (Anomalies, SLA, Contracts)
-  ↓
-Approval Workflow
-    ├──> No Issues → Human Check → Auto-Approve → Payment Processing
-    └──> Issues Found → Dashboard Review → Manual Resolution
-  ↓
-Integration with ERP/Accounting Systems (APIs)
-  ↓
-Continuous Learning (User Feedback → AI Model Retraining)
-  ↓
-End
-```
-
-
-The platform operates on a sophisticated, event-driven workflow designed for scalability and reliability.
-
-
-**1. Document Intake:**
--   Invoices and supporting documents are received through various channels, with the primary channel being a secure, on-premises **Vendor Portal**.
-
-**2. Pre-Verification & Alerts (Vendor Portal):**
--   If submitted via the portal, a real-time validation engine performs a "pre-flight check." It alerts the vendor of any immediate errors (missing documents, signature issues), preventing incorrect submissions from entering the system.
-
-**3. Data Extraction (Asynchronous Processing):**
--   Upon successful submission, a job message is sent to a **RabbitMQ** processing queue.
--   A Python-based worker service picks up the job, retrieves the documents from **MinIO** object storage, and feeds them into the AI engine.
--   The Deep Learning model performs integrated OCR and data structuring, outputting clean JSON.
-
-**4. Cross-Verification:**
--   The system matches the extracted data against POs and other records fetched from the primary business database (ERP). Discrepancies are flagged.
-
-**5. Objection & Penalty Analysis:**
--   The AI analyzes the invoice against all historical data in the **PostgreSQL** database to flag statistical anomalies and suspicious patterns.
--   It then checks for any applicable penalties or SLA violations based on stored contract terms.
-
-**6. Approval Workflow:**
--   **Straight-Through Processing:** If zero discrepancies or objections are found, the invoice is automatically flagged as "Approved" and sent for payment processing.
--   **Exception Handling:** If any issues are flagged, the invoice and its detailed verification report are routed to the appropriate personnel via a user-facing dashboard for manual review and resolution.
-
-**7. Integration with Core Systems:**
--   The entire system is designed with APIs to integrate seamlessly with existing **Enterprise Resource Planning (ERP)** and accounting systems for data synchronization and financial record-keeping.
-
-**8. Continuous Learning:**
--   The system architecture includes feedback loops where user actions (e.g., overriding a flag, rejecting an invoice) are logged. This data is used to periodically re-train and improve the accuracy of the AI models and the effectiveness of the objection and fraud detection capabilities.
-
----
 
 ##  Technology Stack
 
