@@ -113,6 +113,81 @@ The first layer of validation. The engine acts as a diligent auditor, comparing 
 -   Validate **bank statements/salary payments** against claimed labor costs.
 -   Confirm **milestone/completion certificates** are present and match the invoiced claims.
 
+  ### 🔍 Cross Verification Workflow
+
+This flow ensures all invoices are valid, justified, and aligned with the Purchase Order, attendance, payments, and milestone documentation.
+
+```text
+Start
+  ↓
+──────────── 1. Match Invoice with PO ─────────────
+  ↓
+Fetch extracted_data (PostgreSQL) & po_data (ERP)
+  ↓
+Define Tolerance for Total Amount (e.g., 0.5%)
+  ↓
+Compare Invoice Total vs PO Total (with tolerance)
+  ├──> If Exceeds → FAIL: "Invoice total exceeds PO"
+  └──> If Within Limit → PASS
+  ↓
+Loop Through Invoice Line Items
+  ↓
+→ For Each Item:
+   ├── Find Matching PO Line Item (using fuzzy match)
+   ├── Compare rate and quantity
+   └── Append Result: PASS / FAIL (with reason)
+  ↓
+Compile Results into JSON Step Report
+  ↓
+──────── 2. Verify Attendance vs PO Manpower ────────
+  ↓
+Fetch extracted_data['attendance_reports'] & po_data
+  ↓
+Aggregate Total Employees from Attendance Reports
+  ↓
+Compare total_employees vs PO required_manpower_count
+  ├──> If Overstaffed → FAIL: "Manpower exceeds PO"
+  └──> Else → PASS
+  ↓
+Compile Attendance Check Report
+  ↓
+─────── 3. Validate Salary Payments vs Billing ───────
+  ↓
+Fetch billed_employees from MPR/invoice
+  ↓
+Fetch paid_employees from salary proofs (bank data)
+  ↓
+Find Discrepancies: billed - paid → unpaid_employees
+  ↓
+If unpaid_employees exists:
+  ├──> FAIL: List of names without salary proof
+  └──> Else → PASS
+  ↓
+Compile Salary Validation Report
+  ↓
+────── 4. Confirm Completion Certificates (Milestones) ──────
+  ↓
+Fetch extracted_data & invoice line items
+  ↓
+Scan Descriptions for Keywords (milestone, phase, delivery)
+  ↓
+If Keywords Detected:
+  ├──> Check if Certificate Exists
+        ├── If Missing → FAIL: "No certificate provided"
+        └── If Present → Compare Certificate & Line Item Description
+            ├── If Match → PASS
+            └── If Mismatch → FAIL: "Milestone does not match certificate"
+  ↓
+Compile Milestone Check Report
+  ↓
+────────────── Final Output ──────────────
+→ Aggregate All Step Reports
+→ Output Final Cross Verification JSON
+→ Continue to Next Phase (Objection Analysis)
+  ↓
+End
+```
+
 ### 3.  Objection-Aware Validation
 The second layer of validation. This module acts as an experienced risk analyst, flagging submissions that, while technically correct, are suspicious based on historical patterns.
 -   Flag objections based on a vendor's **historical data**, identifying chronic issues, anomalous billing behavior, and high-risk attributes.
