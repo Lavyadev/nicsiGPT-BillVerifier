@@ -435,6 +435,73 @@ Ensures all foundational legal and compliance documents are in order.
 -   Validate the integrity and validity of **Bank Guarantees** and **Work Orders**.
 -   Check for **bill validity** and detect potential **duplicate submissions** across the system.
 
+```text
+  Start
+  ↓
+──────────── 1. Trigger & Purpose ─────────────
+  ↓
+Trigger:
+Part of Cross-Verification Engine — runs BEFORE penalties
+  ↓
+Purpose:
+Catch CRITICAL failures in compliance documents (not financial issues)
+
+──────────── 2. Execute Duplicate Submission Check ─────────────
+  ↓
+Extract:
+  ├── vendor_id
+  ├── extracted_invoice_number
+  └── extracted_total_amount
+  ↓
+PostgreSQL Query:
+SELECT submission_id FROM submissions
+WHERE vendor_id = %s
+AND extracted_data->'invoice'->>'invoice_number' = %s
+AND extracted_data->'invoice'->>'total_amount' = %s;
+  ↓
+If rows returned:
+  └── CRITICAL FAILURE:
+      Set status = "Requires Manual Investigation"
+      Reason = "Potential Duplicate of submission_id #XYZ"
+      ↓
+      STOP processing for this submission
+
+──────────── 3. Execute Bill Validity Check ─────────────
+  ↓
+Extract:
+  └── invoice_date (from extracted_data)
+  ↓
+Calculate:
+  days_old = (today - invoice_date).days
+  ↓
+Compare with max_invoice_age (e.g., 90 days)
+  ↓
+If days_old > max_invoice_age:
+  └── FAIL with reason: "Invoice is time-barred"
+
+──────────── 4. Execute Work Order / Bank Guarantee Check ─────────────
+  ↓
+Check if work_order or bank_guarantee object exists in extracted_data
+  ↓
+If exists:
+  ├── Extract expiry_date from document
+  ├── If expiry_date < today → FAIL with reason: "Bank Guarantee expired"
+  ↓
+  ├── Extract order_value or guarantee_amount
+  ├── Compare with required value in po_data
+  └── If mismatch → FAIL with reason: "Mismatch in Guarantee/Order Value"
+
+──────────── 5. Update Verification Report ─────────────
+  ↓
+For each check:
+  └── Append result (PASS / FAIL + reason) to verification_report["standard_checks"]
+  ↓
+If any check FAILED:
+  └── Set submission status = "Pending Review"
+
+↓
+End
+```
 ---
 
 
