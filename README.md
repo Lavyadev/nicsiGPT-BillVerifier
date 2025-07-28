@@ -40,7 +40,7 @@ The platform operates on a sophisticated, event-driven workflow designed for sca
 **3. Data Extraction (Asynchronous Processing):**
 -   Upon successful submission, a job message is sent to a **RabbitMQ** processing queue.
 -   A Python-based worker service picks up the job, retrieves the documents from **MinIO** object storage, and feeds them into the AI engine.
--   The Deep Learning model performs integrated OCR and data structuring, outputting clean JSON.
+-   The LLM model performs integrated OCR and data structuring, outputting clean JSON.
 
 **4. Cross-Verification:**
 -   The system matches the extracted data against POs and other records fetched from the primary business database (ERP). Discrepancies are flagged.
