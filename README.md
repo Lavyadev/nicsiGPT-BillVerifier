@@ -75,97 +75,98 @@ The foundation of the platform. The system ingests and understands a wide array 
 
 ```text
 Start
-  ↓
+↓
 ────────────────── Phase 1: Staging Area ──────────────────
-  ↓
+↓
 Vendor Enters PO Number
-  ↓
-→ Server fetches PO requirements (ground truth)
-  ↓
-Vendor Drag-and-Drops PDFs (Invoice, MPR, Certificate)
-  ↓
-→ Client-side validation: only PDF allowed
-    ├──> If not PDF → show error → reject file
-    └──> If PDF → upload to staging endpoint
-  ↓
-Show "Analyzing..." spinner in UI for each file
-  ↓
-──────────────── Phase 2: Pre-Flight Check ────────────────
-  ↓
-→ Server triggers High-Speed AI Pipeline (Quick Look)
-  ↓
-Real-Time AI Checks:
-  • Document Existence (e.g., Certificate required?)
-  • Key Field Extraction (GST, Amount, Vendor Name)
-  • Signature Detection (CV model on Certificate)
-  • Basic Consistency Check (Vendor data vs DB)
-  ↓
-→ Server sends back JSON with warnings/errors
-  ↓
+↓
+→ Server fetches PO requirements (e.g., required documents, vendor details).
+↓
+Vendor Drag-and-Drops PDFs (Invoice, MPR, Certificate).
+↓
+→ Client-side validation: only PDF allowed.
+├──> If not PDF → show error → reject file.
+└──> If PDF → upload to staging endpoint.
+↓
+Show "Analyzing..." spinner in UI for each file.
+↓
+──────────────── Phase 2: High-Speed Pre-Flight Check ────────────────
+↓
+→ Server triggers a Hybrid Pre-Flight Pipeline in Parallel.
+↓
+Parallel Real-Time Checks:
+• Document Existence Check (Business Logic): Compares uploaded files against the PO's required document list.
+• Signature Detection (Dedicated CV Model): A fast CV model checks for a signature on specific documents like certificates.
+• Key Field Extraction (Lightweight LLM Call): For the invoice, the first page is sent to a fast, low-latency LLM (e.g., Gemini Flash) with a highly targeted prompt: "Extract vendor_gstin, invoice_total_amount, and vendor_name. Respond ONLY with JSON."
+• Basic Consistency Check (Database Query): The extracted vendor_gstin is cross-referenced with the vendor's data in the database.
+↓
+→ Server consolidates results from all parallel checks and sends back a single JSON response with warnings/errors.
+↓
 ──────────── Phase 3: Interactive Feedback Loop ───────────
-  ↓
-UI renders result checklist:
-  • ✅ Invoice Found
-  • ⚠ GST Mismatch
-  • ❌ Missing Completion Certificate
-  • ✅ MPR Found
-  • ✅ Signature Found (if doc present)
-  ↓
-"Submit" button remains DISABLED until all ❌ are resolved
-  ↓
+↓
+UI renders the real-time result checklist:
+• ✅ Invoice Found
+• ⚠ GST Mismatch: (Result from LLM + DB Check)
+• ❌ Missing Completion Certificate: (Result from Business Logic Check)
+• ✅ MPR Found
+• ❌ Signature Not Detected: (Result from CV Model Check)
+↓
+"Submit" button remains DISABLED until all critical (❌) errors are resolved.
+↓
 Vendor Corrects Issues:
-  → Upload missing/corrected files
-  → System re-runs analysis
-  → UI updates checklist in real-time
-  ↓
-→ Loop continues until all checks are ✅
-  ↓
+→ Uploads missing/corrected files.
+→ System re-runs the specific check for the updated file.
+→ UI updates checklist in real-time.
+↓
+→ Loop continues until all checks are ✅.
+↓
 ────────────── Phase 4: Final Submission ────────────────
-  ↓
-"Submit" Button is ENABLED
-  ↓
-Vendor clicks "Submit"
-  ↓
+↓
+"Submit" Button is ENABLED.
+↓
+Vendor clicks "Submit".
+↓
 → Server performs Final Validation:
-    • Valid PDF Magic Number?
-    • PO Number Present?
-    ├──> If any invalid → reject & delete → return error
-    └──> If all valid → continue
-  ↓
-Generate submission_id (e.g., sub_a1b2c3d4)
-  ↓
-Move files to permanent storage (e.g., MinIO)
-  ↓
-Generate Final JSON Job Message with metadata + file paths
-  ↓
-Publish message to RabbitMQ queue
-  ↓
-→ Server returns "Success" response to UI
-  ↓
-──────────────────── Phase 5: Deep Analysis ───────────────
-  ↓
-Worker picks message from RabbitMQ queue
-  ↓
-→ Downloads files from MinIO
-  ↓
-Convert PDF to high-res image
-  ↓
+• Valid PDF Magic Number?
+• PO Number Present?
+├──> If any invalid → reject & delete → return error.
+└──> If all valid → continue.
+↓
+Generate submission_id (e.g., sub_a1b2c3d4).
+↓
+Move files to permanent storage (e.g., MinIO).
+↓
+Generate Final JSON Job Message with metadata + file paths.
+↓
+Publish message to RabbitMQ queue.
+↓
+→ Server returns "Success" response to UI.
+↓
+──────────────────── Phase 5: Deep Analysis with LLM ───────────────
+↓
+Worker picks message from RabbitMQ queue.
+↓
+→ Downloads files from MinIO.
+↓
+Convert PDF pages to high-resolution images.
+↓
 Image Preprocessing:
-  • Deskew
-  • Binarize
-  • Noise Reduction
-  ↓
-OCR Engine extracts text + positions (bounding boxes)
-  ↓
-AI Structuring Model processes:
-  • Key-Value Pair Extraction
-  • Table Recognition
-  • Logical Value Assignment (e.g., Grand Total)
-  ↓
-Aggregate structured data for entire submission
-  ↓
-→ Format final output (e.g., standardize dates)
-  ↓
+• Deskew
+• Binarize
+• Noise Reduction
+↓
+Dynamic Prompt Engineering:
+→ System constructs a detailed prompt defining the required JSON schema for all documents (invoices, line items, MPR tables, etc.).
+↓
+Multimodal LLM Execution:
+→ The images and detailed prompt are sent to a powerful multimodal LLM (e.g., Gemini Pro) to perform comprehensive, context-aware data extraction.
+↓
+Response Validation & Sanitization:
+→ The LLM's JSON response is parsed and validated against the requested schema.
+→ Values are sanitized (e.g., text to numbers, date standardization).
+↓
+Aggregate structured data for the entire submission into a final, clean JSON object.
+↓
 End
 ```
 ### 2.  Cross-Verification Engine
