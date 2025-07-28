@@ -10,7 +10,7 @@ Document Intake
   ↓
 Pre-Verification & Alerts (Vendor Portal)
   ↓
-Data Extraction (RabbitMQ + AI OCR + MinIO)
+Data Extraction (RabbitMQ + LLM + MinIO)
   ↓
 Cross-Verification (ERP & PO Matching)
   ↓
@@ -69,7 +69,7 @@ This project automates the verification process through five core modules of int
 ### 1.  Invoice & Supporting Document Extraction
 The foundation of the platform. The system ingests and understands a wide array of document types submitted as a single package.
 -   **Parses:** Invoices, Manpower Reports (MPR), Attendance Reports, Salary Proofs, Completion Certificates, and more.
--   **Technology:** A Deep Learning model with integrated OCR capabilities (based on LayoutLM architecture) for high-accuracy, context-aware data extraction.
+-   **Technology:** An LLM model with integrated OCR capabilities for high-accuracy, context-aware data extraction.
 
 ### 🔁 Enhanced Document Ingestion Workflow (with Pre-Submission Alerts)
 
