@@ -82,7 +82,7 @@ Vendor Enters PO Number
 ↓
 → Server fetches PO requirements (e.g., required documents, vendor details).
 ↓
-Vendor Drag-and-Drops PDFs (Invoice, MPR, Certificate).
+Vendor Drag-and-Drops PDFs (Invoice, MPR, Salary proofs).
 ↓
 → Client-side validation: only PDF allowed.
 ├──> If not PDF → show error → reject file.
