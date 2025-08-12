@@ -1,40 +1,35 @@
 import re
 from rapidfuzz import fuzz, process
 from backend.config import DOCUMENT_KEYWORDS, FUZZY_THRESHOLD
+import logging
 
 # ────────────────────────── Enhanced Fuzzy Matching ──────────────────────────
 
 def fuzzy_keyword_match(text: str, keyword_list: list, threshold: int = FUZZY_THRESHOLD) -> bool:
-    """
-    Checks whether any keyword in the list appears in the text using:
-    - Exact match for short keywords
-    - Word-by-word presence for multi-word phrases
-    - Fallback fuzzy match using partial_ratio
-    """
     text = text.lower()
-
     for keyword in keyword_list:
         keyword = keyword.lower()
 
-        # Case 1: very short keyword (<=3 chars) → exact match
         if len(keyword) <= 3:
             if re.search(rf"\b{re.escape(keyword)}\b", text):
+                logging.info(f"✅ Exact short match: '{keyword}' found in text.")
                 return True
 
-        # Case 2: multi-word keyword → all words must exist
         elif " " in keyword:
             words = keyword.split()
             if all(re.search(rf"\b{re.escape(word)}\b", text) for word in words):
+                logging.info(f"✅ All words found in multi-word keyword: '{keyword}'")
                 return True
 
-        # Case 3: fallback fuzzy match
         else:
             matches = process.extract(keyword, [text], scorer=fuzz.partial_ratio, limit=1)
             score = matches[0][1] if matches else 0
+            logging.info(f"🔍 Fuzzy match for '{keyword}': Score={score}")
             if score >= threshold:
                 return True
 
     return False
+
 
 # ─────────────────────── Document Presence Detector ───────────────────────
 

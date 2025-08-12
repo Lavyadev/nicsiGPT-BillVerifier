@@ -1,33 +1,68 @@
 import tempfile
 from pdf2image import convert_from_path
-from pytesseract import image_to_string
+from pytesseract import image_to_string, image_to_osd, Output 
 from PIL import Image
 from typing import List, Dict
 import logging
 import numpy as np
 import cv2
+import os
+import pytesseract
+
+# Create debug output directory
+DEBUG_DIR = "debug_output"
+os.makedirs(DEBUG_DIR, exist_ok=True)
 
 # ─────────────────────── Preprocessing + OCR ───────────────────────
 
-def extract_text_from_image(pil_image: Image.Image, page_num: int = None) -> str:
-    """
-    Preprocesses image (grayscale + binarization) and extracts text using Tesseract.
-    """
+def correct_image_orientation(image: Image.Image, page_num: int = None) -> Image.Image:
     try:
-        # Convert to grayscale OpenCV format
+        osd = pytesseract.image_to_osd(image, output_type=pytesseract.Output.DICT) #type:ignore 
+        angle = osd.get("rotate", 0)
+
+        # 🧭 Log detected orientation for debugging
+        if page_num is not None:
+            logging.info(f"🧭 Detected rotation for Page {page_num}: {angle} degrees")
+
+        rotated_image = image.rotate(-angle, expand=True)
+        return rotated_image
+    except Exception as e:
+        logging.error(f"Orientation correction failed on Page {page_num}: {str(e)}")
+        return image
+
+
+
+def extract_text_from_image(pil_image: Image.Image, page_num: int = None) -> str:
+    try:
+        pil_image = correct_image_orientation(pil_image, page_num)
         gray = np.array(pil_image.convert("L"))
 
-        # Adaptive thresholding (improves OCR on scans)
+        # Apply Gaussian blur to reduce noise
+        blurred = cv2.GaussianBlur(gray, (3, 3), 0)
+
+        # Adaptive thresholding (try both THRESH_BINARY and THRESH_BINARY_INV)
         binary = cv2.adaptiveThreshold(
-            gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-            cv2.THRESH_BINARY, 11, 2
+            blurred, 255, cv2.ADAPTIVE_THRESH_MEAN_C,
+            cv2.THRESH_BINARY, 15, 11
         )
 
-        # Convert back to PIL for Tesseract
-        processed_img = Image.fromarray(binary)
+        # De-skew the image (if needed)
+        coords = np.column_stack(np.where(binary > 0))
+        angle = cv2.minAreaRect(coords)[-1]
+        if angle < -45:
+            angle = -(90 + angle)
+        else:
+            angle = -angle
+        (h, w) = binary.shape[:2]
+        center = (w // 2, h // 2)
+        M = cv2.getRotationMatrix2D(center, angle, 1.0)
+        rotated = cv2.warpAffine(binary, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
 
-        # OCR with Tesseract
-        text = image_to_string(processed_img)
+        # Save preprocessed image
+        if page_num is not None:
+            Image.fromarray(rotated).save(os.path.join(DEBUG_DIR, f"page_{page_num:03}_processed_rotated.png"))
+
+        text = image_to_string(Image.fromarray(rotated))
         return text.strip()
 
     except Exception as e:

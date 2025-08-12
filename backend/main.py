@@ -41,9 +41,19 @@ async def analyze_document(po_number: str = Form(...), file: UploadFile = Form(.
         print("🔍 Running OCR...")
         ocr_text_by_page = run_ocr_on_images(image_paths)
 
+        # ───────────── Debug: Save OCR output to file ─────────────
+        debug_file_path = f"ocr_debug_output_{submission_id}.txt"
+        with open(debug_file_path, "w", encoding="utf-8") as f:
+          for page_num, page_text in ocr_text_by_page.items():
+            f.write(f"\n\n=== OCR TEXT: Page {page_num + 1} ===\n")
+            f.write(page_text if page_text else "[Empty Page]")
+        print(f"✅ OCR debug output saved at: {debug_file_path}")
+
+
         # STEP 3: Classify document types per page
         print("📄 Classifying page types...")
         page_doc_types = classify_pages_by_type(ocr_text_by_page)
+        print('page doc tyopes', page_doc_types)
         print("\n=== Page Classification ===")
         for page, doc_type in page_doc_types.items():
            print(f"Page {page + 1}: {doc_type}")
