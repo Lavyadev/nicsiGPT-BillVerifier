@@ -577,12 +577,12 @@ This data is required for specific, advanced validation checks.
 
 This project is built with a focus on on-premises deployment, security, and scalability.
 
--   **Backend:** Python (Flask/Django)
--   **AI/ML:** PyTorch, LayoutLM, OpenCV, Tesseract
+-   **Backend:** Python (FastAPI)
+-   **AI/ML:** Llama3, OpenCV, Tesseract
 -   **Database:** PostgreSQL (with JSONB support)
 -   **Message Queue:** RabbitMQ
 -   **File Storage:** MinIO (S3-Compatible Object Storage)
--   **Frontend Dashboard:** React / Angular / Vue.js
+-   **Frontend Dashboard:** Streamlit
 -   **Deployment:** Docker, Cron (for scheduled tasks)
 
 ---
