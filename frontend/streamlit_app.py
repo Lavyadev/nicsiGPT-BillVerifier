@@ -151,3 +151,4 @@ if st.button("Analyze", disabled=analyze_disabled, type="primary"):
                 st.error("⏳ Request timed out. Increase the timeout in Advanced settings and try again.")
             except Exception as e:
                 st.error(f"🚨 Request failed: {str(e)}")
+                
